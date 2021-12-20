@@ -1,0 +1,13 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+    }
+}
+
+rootProject.name = "Fixture Generator"
+
+include ':app'
+include ':fixture-annotation'
+include ':fixture-generator'
+include ':fixture-example'
