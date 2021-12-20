@@ -5,7 +5,7 @@
 
 # Prerequisites: appropriate project structure should exist in the repository.
 
-image: gradle:7.0.2
+image: gradle:7.0.2-jdk-11
 
 pipelines:
   default:
@@ -15,8 +15,6 @@ pipelines:
           caches:
             - gradle
           script:
-            - export PATH=/usr/lib/jvm/java-1.11.0-openjdk-amd64/bin:$PATH
-            - export JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-amd64/
             - gradle build
           after-script:
             - pipe: atlassian/checkstyle-report:0.3.0
