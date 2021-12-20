@@ -4,6 +4,7 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
+import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.toTypeName
 
 class FixtureGeneratorKsp(
@@ -28,6 +29,7 @@ class FixtureGeneratorKsp(
         return FileSpec.builder(parentDeclaration.packageName.asString(), fixtureTypeName)
             .addType(
                 TypeSpec.objectBuilder(fixtureTypeName)
+                    .addOriginatingKSFile(functionDecleration.containingFile!!)
                     .addFunction(
                         FunSpec.builder(buildFactoryMethodName(parentDeclaration))
                             .addCode(CodeBlock.of("return $constructor"))
@@ -47,6 +49,11 @@ class FixtureGeneratorKsp(
         return when {
             nullable -> "null"
             typeName == "kotlin.Int" -> "0"
+            typeName == "kotlin.Float" -> "0.0F"
+            typeName == "kotlin.Double" -> "0.0"
+            typeName == "kotlin.Short" -> "0"
+            typeName == "kotlin.Long" -> "0L"
+            typeName == "kotlin.Byte" -> "0"
             typeName == "kotlin.Boolean" -> "false"
             typeName == "kotlin.String" -> "\"\""
             isFixture -> buildFactoryFunctionCall(type)
