@@ -12,13 +12,13 @@ class FixtureGeneratorKsp(
 ) {
 
     @OptIn(KotlinPoetKspPreview::class)
-    fun generateFrom(functionDecleration: KSFunctionDeclaration): FileSpec {
-        val parentDeclaration = requireNotNull(functionDecleration.parentDeclaration)
+    fun generateFrom(functionDeclaration: KSFunctionDeclaration): FileSpec {
+        val parentDeclaration = requireNotNull(functionDeclaration.parentDeclaration)
 
         // Make this a CodeBlock
         val constructor = buildString {
             appendLine("${parentDeclaration.qualifiedName!!.asString()}(")
-            for (parameter in functionDecleration.parameters) {
+            for (parameter in functionDeclaration.parameters) {
                 val memberValue = formatValue(parameter)
                 appendLine("    ${parameter.name?.asString()} = $memberValue,")
             }
@@ -29,11 +29,11 @@ class FixtureGeneratorKsp(
         return FileSpec.builder(parentDeclaration.packageName.asString(), fixtureTypeName)
             .addType(
                 TypeSpec.objectBuilder(fixtureTypeName)
-                    .addOriginatingKSFile(functionDecleration.containingFile!!)
+                    .addOriginatingKSFile(functionDeclaration.containingFile!!)
                     .addFunction(
                         FunSpec.builder(buildFactoryMethodName(parentDeclaration))
                             .addCode(CodeBlock.of("return $constructor"))
-                            .returns(functionDecleration.returnType!!.resolve().toTypeName())
+                            .returns(functionDeclaration.returnType!!.resolve().toTypeName())
                             .build()
                     )
                     .build()
