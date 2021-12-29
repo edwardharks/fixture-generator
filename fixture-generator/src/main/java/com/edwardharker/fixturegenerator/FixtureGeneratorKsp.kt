@@ -1,10 +1,12 @@
 package com.edwardharker.fixturegenerator
 
+import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
+import com.squareup.kotlinpoet.ksp.toKModifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 
 class FixtureGeneratorKsp(
@@ -14,6 +16,16 @@ class FixtureGeneratorKsp(
     @OptIn(KotlinPoetKspPreview::class)
     fun generateFrom(functionDeclaration: KSFunctionDeclaration): FileSpec {
         val parentDeclaration = requireNotNull(functionDeclaration.parentDeclaration)
+
+        val constructorVisibility = requireNotNull(functionDeclaration.getVisibility().toKModifier())
+        if (constructorVisibility == KModifier.PRIVATE) {
+            throw IllegalArgumentException("Cannot create fixtures for private primary constructors")
+        }
+
+        val classVisibility = requireNotNull(parentDeclaration.getVisibility().toKModifier())
+        if (classVisibility == KModifier.PRIVATE) {
+            throw IllegalArgumentException("Cannot create fixtures for private classes")
+        }
 
         // Make this a CodeBlock
         val constructor = buildString {
@@ -30,8 +42,10 @@ class FixtureGeneratorKsp(
             .addType(
                 TypeSpec.objectBuilder(fixtureTypeName)
                     .addOriginatingKSFile(functionDeclaration.containingFile!!)
+                    .addModifiers(classVisibility)
                     .addFunction(
                         FunSpec.builder(buildFactoryMethodName(parentDeclaration))
+                            .addModifiers(constructorVisibility)
                             .addCode(CodeBlock.of("return $constructor"))
                             .returns(functionDeclaration.returnType!!.resolve().toTypeName())
                             .build()
@@ -46,7 +60,6 @@ class FixtureGeneratorKsp(
         val nullable = type.isMarkedNullable
         val typeName = type.declaration.qualifiedName?.asString()
         val isFixture = isFixture(type)
-        logger.warn(typeName!!)
         return when {
             nullable -> "null"
             typeName == "kotlin.Int" -> "0"

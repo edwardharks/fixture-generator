@@ -81,10 +81,6 @@ data class FixtureExampleClass(
 
 // TODO
 
-/* Don't generate fixtures for private constructors */
-//@Fixture
-//class PrivateConstructor private constructor(val foo: String)
-
 /* Inner class Fixture should be child of outer class fixture to avoid conflicts */
 //@Fixture
 //class OuterClass(
