@@ -46,6 +46,7 @@ class FixtureGeneratorKsp(
         val nullable = type.isMarkedNullable
         val typeName = type.declaration.qualifiedName?.asString()
         val isFixture = isFixture(type)
+        logger.warn(typeName!!)
         return when {
             nullable -> "null"
             typeName == "kotlin.Int" -> "0"
@@ -56,6 +57,19 @@ class FixtureGeneratorKsp(
             typeName == "kotlin.Byte" -> "0"
             typeName == "kotlin.Boolean" -> "false"
             typeName == "kotlin.String" -> "\"\""
+            typeName == "kotlin.Char" -> "'\\u0000'"
+            typeName == "kotlin.collections.List" -> "emptyList()"
+            typeName == "kotlin.collections.Map" -> "emptyMap()"
+            typeName == "kotlin.collections.Set" -> "emptySet()"
+            typeName == "kotlin.Array" -> "emptyArray()"
+            typeName == "kotlin.IntArray" -> "intArrayOf()"
+            typeName == "kotlin.DoubleArray" -> "doubleArrayOf()"
+            typeName == "kotlin.FloatArray" -> "floatArrayOf()"
+            typeName == "kotlin.ShortArray" -> "shortArrayOf()"
+            typeName == "kotlin.LongArray" -> "longArrayOf()"
+            typeName == "kotlin.ByteArray" -> "byteArrayOf()"
+            typeName == "kotlin.BooleanArray" -> "booleanArrayOf()"
+            typeName == "kotlin.CharArray" -> "charArrayOf()"
             isFixture -> buildFactoryFunctionCall(type)
             else -> throw IllegalArgumentException("Unknown property type: $type. Classes must have @Fixture")
         }
