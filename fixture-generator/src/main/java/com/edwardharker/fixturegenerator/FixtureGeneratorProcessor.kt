@@ -15,7 +15,7 @@ class GraphqlBuilderProcessor(
     private val logger: KSPLogger,
     private val options: Map<String, String>,
 ) : SymbolProcessor {
-    private val fixtureGenerator = FixtureGeneratorKsp(logger)
+    private val fixtureGenerator = FixtureGenerator(logger)
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val symbols = resolver.getSymbolsWithAnnotation(Fixture::class.qualifiedName!!)
@@ -35,7 +35,8 @@ class GraphqlBuilderProcessor(
         @OptIn(KotlinPoetKspPreview::class)
         override fun visitFunctionDeclaration(function: KSFunctionDeclaration, data: Unit) {
             val fileSpec = fixtureGenerator.generateFrom(function)
-            fileSpec.writeTo(codeGenerator,
+            fileSpec.writeTo(
+                codeGenerator,
                 fileSpec.kspDependencies(aggregating = false)
             )
         }
