@@ -3,6 +3,7 @@ package com.edwardharker.fixturegenerator.ksp
 import com.google.devtools.ksp.symbol.*
 
 class FakeKSDeclaration(
+    override val parentDeclaration: KSDeclaration? = null,
     override val modifiers: Set<Modifier> = emptySet(),
 ) : KSDeclaration {
     override val annotations: Sequence<KSAnnotation>
@@ -33,8 +34,6 @@ class FakeKSDeclaration(
     override val packageName: KSName
         get() = TODO("Not yet implemented")
     override val parent: KSNode?
-        get() = TODO("Not yet implemented")
-    override val parentDeclaration: KSDeclaration?
         get() = TODO("Not yet implemented")
     override val qualifiedName: KSName?
         get() = TODO("Not yet implemented")
