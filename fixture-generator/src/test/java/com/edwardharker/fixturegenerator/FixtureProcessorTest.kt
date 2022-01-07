@@ -1,12 +1,6 @@
 package com.edwardharker.fixturegenerator
 
-import com.edwardharker.fixturegenerator.ksp.*
 import com.google.common.truth.Truth.assertThat
-import com.google.devtools.ksp.symbol.KSName
-import com.google.devtools.ksp.symbol.KSTypeReference
-import com.google.devtools.ksp.symbol.Modifier
-import com.google.devtools.ksp.symbol.Modifier.PRIVATE
-import com.google.devtools.ksp.symbol.Modifier.PUBLIC
 import com.tschuchort.compiletesting.*
 import com.tschuchort.compiletesting.SourceFile.Companion.kotlin
 import org.junit.Rule

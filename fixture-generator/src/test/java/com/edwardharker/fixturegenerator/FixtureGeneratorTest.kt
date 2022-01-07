@@ -1,18 +1,11 @@
 package com.edwardharker.fixturegenerator
 
-import com.edwardharker.fixturegenerator.ksp.*
-import com.google.devtools.ksp.symbol.KSName
-import com.google.devtools.ksp.symbol.KSTypeReference
-import com.google.devtools.ksp.symbol.Modifier
+import com.edwardharker.fixturegenerator.ksp.FakeKSDeclaration
+import com.edwardharker.fixturegenerator.ksp.FakeKSFunctionDeclaration
+import com.edwardharker.fixturegenerator.ksp.FakeKSPLogger
 import com.google.devtools.ksp.symbol.Modifier.PRIVATE
 import com.google.devtools.ksp.symbol.Modifier.PUBLIC
-import com.tschuchort.compiletesting.KotlinCompilation
-import com.tschuchort.compiletesting.SourceFile
-import com.tschuchort.compiletesting.kspIncremental
-import com.tschuchort.compiletesting.symbolProcessorProviders
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 
 internal class FixtureGeneratorTest {
 
