@@ -18,9 +18,8 @@ kotlin {
 }
 
 dependencies {
-    implementation project(":fixture-annotation")
-
-    ksp(project(":fixture-generator"))
+    implementation project(":annotation")
+    ksp(project(":generator"))
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation "com.google.truth:truth:1.1.3"

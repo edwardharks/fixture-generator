@@ -5,8 +5,6 @@ pluginManagement {
     }
 }
 
-rootProject.name = "Fixture Generator"
-
-include ':fixture-annotation'
-include ':fixture-generator'
-include ':fixture-example'
+include ':annotation'
+include ':generator'
+include ':example'

@@ -8,9 +8,9 @@ class FakeKSDeclaration(
 ) : KSDeclaration {
     override val annotations: Sequence<KSAnnotation>
         get() = TODO("Not yet implemented")
-    override val containingFile: KSFile?
+    override val containingFile: KSFile
         get() = TODO("Not yet implemented")
-    override val docString: String?
+    override val docString: String
         get() = TODO("Not yet implemented")
     override val typeParameters: List<KSTypeParameter>
         get() = TODO("Not yet implemented")
@@ -33,9 +33,9 @@ class FakeKSDeclaration(
         get() = TODO("Not yet implemented")
     override val packageName: KSName
         get() = TODO("Not yet implemented")
-    override val parent: KSNode?
+    override val parent: KSNode
         get() = TODO("Not yet implemented")
-    override val qualifiedName: KSName?
+    override val qualifiedName: KSName
         get() = TODO("Not yet implemented")
     override val simpleName: KSName
         get() = TODO("Not yet implemented")

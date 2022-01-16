@@ -8,13 +8,13 @@ class FakeKSFunctionDeclaration(
 ) : KSFunctionDeclaration {
     override val annotations: Sequence<KSAnnotation>
         get() = TODO("Not yet implemented")
-    override val containingFile: KSFile?
+    override val containingFile: KSFile
         get() = TODO("Not yet implemented")
     override val declarations: Sequence<KSDeclaration>
         get() = TODO("Not yet implemented")
-    override val docString: String?
+    override val docString: String
         get() = TODO("Not yet implemented")
-    override val extensionReceiver: KSTypeReference?
+    override val extensionReceiver: KSTypeReference
         get() = TODO("Not yet implemented")
     override val functionKind: FunctionKind
         get() = TODO("Not yet implemented")
@@ -32,11 +32,11 @@ class FakeKSFunctionDeclaration(
         get() = TODO("Not yet implemented")
     override val parameters: List<KSValueParameter>
         get() = TODO("Not yet implemented")
-    override val parent: KSNode?
+    override val parent: KSNode
         get() = TODO("Not yet implemented")
-    override val qualifiedName: KSName?
+    override val qualifiedName: KSName
         get() = TODO("Not yet implemented")
-    override val returnType: KSTypeReference?
+    override val returnType: KSTypeReference
         get() = TODO("Not yet implemented")
     override val simpleName: KSName
         get() = TODO("Not yet implemented")
