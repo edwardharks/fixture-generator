@@ -46,6 +46,63 @@ public object ExampleClassFixtures {
         )
     }
 
+    @Test
+    fun `picks first enum value`() {
+        val compilation = prepareCompilation(
+            kotlin(
+                "Example.kt",
+                """
+package test
+import com.edwardharker.fixturegenerator.Fixture
+@Fixture
+class ExampleClass(val enum: ExampleEnum)
+enum class ExampleEnum {
+    FIRST, SECOND
+}
+                """.trimIndent()
+            )
+        )
+
+        val result = compilation.compile()
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        val generatedFileText = File(compilation.kspSourcesDir, "kotlin/test/ExampleClassFixtures.kt")
+            .readText()
+
+        assertThat(generatedFileText).isEqualToKotlin(
+            """
+package test
+
+public object ExampleClassFixtures {
+  public fun exampleClass(): ExampleClass = test.ExampleClass(
+      enum = test.ExampleEnum.FIRST,
+  )
+}
+
+        """.trimIndent()
+        )
+    }
+
+    @Test
+    fun `throws error when enum has no values`() {
+        val compilation = prepareCompilation(
+            kotlin(
+                "Example.kt",
+                """
+package test
+import com.edwardharker.fixturegenerator.Fixture
+@Fixture
+class ExampleClass(val enum: ExampleEnum)
+enum class ExampleEnum
+                """.trimIndent()
+            )
+        )
+
+        val result = compilation.compile()
+
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result.messages).contains("Enum has no values")
+    }
+
     private fun StringSubject.isEqualToKotlin(@Language("kotlin") expected: String) = isEqualTo(expected)
 
     private fun prepareCompilation(vararg sourceFiles: SourceFile): KotlinCompilation {

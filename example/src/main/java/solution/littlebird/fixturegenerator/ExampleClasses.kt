@@ -79,6 +79,15 @@ data class FixtureExampleClass(
     val example: String
 )
 
+@Fixture
+data class EnumExamples(
+    val day: Day,
+)
+
+enum class Day {
+    MONDAY, TUESDAY
+}
+
 // TODO
 
 /* Improve processor tests */
@@ -91,16 +100,6 @@ data class FixtureExampleClass(
 //    @Fixture
 //    class InnerClass(foo: String)
 //}
-
-/* Enums either need to be annotated or we pick the first value */
-@Fixture
-data class EnumExamples(
-    val day: Day
-)
-
-enum class Day {
-    MONDAY, TUESDAY
-}
 
 /* Sealed classes - how do we pick the subclass to create? */
 

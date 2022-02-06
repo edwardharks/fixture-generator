@@ -93,8 +93,11 @@ class FixtureGenerator(
     }
 
     private fun getFirstEnumValue(type: KSType): String {
-        val enumValue = (type.declaration as KSClassDeclaration).declarations.first()
-        return enumValue.qualifiedName!!.asString()
+        val enumValue = (type.declaration as KSClassDeclaration).declarations
+            .filterNot { it is KSFunctionDeclaration }
+            .firstOrNull()
+        return enumValue?.qualifiedName?.asString()
+            ?: throw IllegalArgumentException("Enum has no values")
     }
 
     private fun buildFactoryFunctionCall(type: KSType): String {
