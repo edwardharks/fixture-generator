@@ -10,7 +10,7 @@ import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.kspDependencies
 import com.squareup.kotlinpoet.ksp.writeTo
 
-class GraphqlBuilderProcessor(
+class FixtureProcessor(
     private val codeGenerator: CodeGenerator,
     private val logger: KSPLogger,
     private val options: Map<String, String>,
@@ -43,11 +43,11 @@ class GraphqlBuilderProcessor(
     }
 }
 
-class GraphqlBuilderProcessorProvider : SymbolProcessorProvider {
+class FixtureProcessorProvider : SymbolProcessorProvider {
     override fun create(
         environment: SymbolProcessorEnvironment
     ): SymbolProcessor {
-        return GraphqlBuilderProcessor(
+        return FixtureProcessor(
             environment.codeGenerator,
             environment.logger,
             environment.options,

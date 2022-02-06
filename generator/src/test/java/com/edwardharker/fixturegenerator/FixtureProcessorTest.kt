@@ -53,7 +53,7 @@ public object ExampleClassFixtures {
             .apply {
                 workingDir = temporaryFolder.root
                 inheritClassPath = true
-                symbolProcessorProviders = listOf(GraphqlBuilderProcessorProvider())
+                symbolProcessorProviders = listOf(FixtureProcessorProvider())
                 sources = sourceFiles.asList()
                 verbose = false
                 kspIncremental = true
