@@ -69,4 +69,13 @@ class ExampleTest {
 
         assertThat(actual).isEqualTo(expected)
     }
+
+    @Test
+    fun `generates enum fixtures`() {
+        val expected = EnumExamples(day = Day.MONDAY)
+
+        val actual = EnumExamplesFixtures.enumExamples()
+
+        assertThat(actual).isEqualTo(expected)
+    }
 }

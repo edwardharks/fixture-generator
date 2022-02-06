@@ -2,10 +2,8 @@ package com.edwardharker.fixturegenerator
 
 import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.processing.KSPLogger
-import com.google.devtools.ksp.symbol.KSDeclaration
-import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.google.devtools.ksp.symbol.KSType
-import com.google.devtools.ksp.symbol.KSValueParameter
+import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.Modifier.ENUM
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
@@ -60,9 +58,11 @@ class FixtureGenerator(
 
     private fun formatValue(parameter: KSValueParameter): String {
         val type = parameter.type.resolve()
+        val declaration = type.declaration
         val nullable = type.isMarkedNullable
-        val typeName = type.declaration.qualifiedName?.asString()
+        val typeName = declaration.qualifiedName?.asString()
         val isFixture = isFixture(type)
+        val isEnum = declaration.modifiers.contains(ENUM)
         return when {
             nullable -> "null"
             typeName == "kotlin.Int" -> "0"
@@ -86,9 +86,15 @@ class FixtureGenerator(
             typeName == "kotlin.ByteArray" -> "byteArrayOf()"
             typeName == "kotlin.BooleanArray" -> "booleanArrayOf()"
             typeName == "kotlin.CharArray" -> "charArrayOf()"
+            isEnum -> getFirstEnumValue(type)
             isFixture -> buildFactoryFunctionCall(type)
-            else -> throw IllegalArgumentException("Unknown property type: $type. Classes must have @Fixture")
+            else -> throw IllegalArgumentException("Unknown property type: $type. Classes must be annotated with @Fixture")
         }
+    }
+
+    private fun getFirstEnumValue(type: KSType): String {
+        val enumValue = (type.declaration as KSClassDeclaration).declarations.first()
+        return enumValue.qualifiedName!!.asString()
     }
 
     private fun buildFactoryFunctionCall(type: KSType): String {

@@ -81,6 +81,8 @@ data class FixtureExampleClass(
 
 // TODO
 
+/* Improve processor tests */
+
 /* Inner class Fixture should be child of outer class fixture to avoid conflicts */
 //@Fixture
 //class OuterClass(
@@ -89,6 +91,20 @@ data class FixtureExampleClass(
 //    @Fixture
 //    class InnerClass(foo: String)
 //}
+
+/* Enums either need to be annotated or we pick the first value */
+@Fixture
+data class EnumExamples(
+    val day: Day
+)
+
+enum class Day {
+    MONDAY, TUESDAY
+}
+
+/* Sealed classes - how do we pick the subclass to create? */
+
+/* Interfaces - probably should just throw a helpful error */
 
 /* Support types that cannot be annotated */
 //@Fixture
