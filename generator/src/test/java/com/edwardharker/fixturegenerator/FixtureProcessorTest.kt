@@ -29,10 +29,8 @@ class ExampleClass()
             )
         )
 
-        val result = compilation.compile()
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-        val generatedFileText = File(compilation.kspSourcesDir, "kotlin/test/ExampleClassFixtures.kt")
-            .readText()
+        val generatedFileText = compilation.compileAndGetFileText()
+
         assertThat(generatedFileText).isEqualToKotlin(
             """
 package test
@@ -60,10 +58,7 @@ class ExampleClass(val nullable: String?)
             )
         )
 
-        val result = compilation.compile()
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-        val generatedFileText = File(compilation.kspSourcesDir, "kotlin/test/ExampleClassFixtures.kt")
-            .readText()
+        val generatedFileText = compilation.compileAndGetFileText()
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
@@ -103,10 +98,7 @@ class ExampleClass(
             )
         )
 
-        val result = compilation.compile()
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-        val generatedFileText = File(compilation.kspSourcesDir, "kotlin/test/ExampleClassFixtures.kt")
-            .readText()
+        val generatedFileText = compilation.compileAndGetFileText()
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
@@ -148,10 +140,7 @@ class ExampleClass(
             )
         )
 
-        val result = compilation.compile()
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-        val generatedFileText = File(compilation.kspSourcesDir, "kotlin/test/ExampleClassFixtures.kt")
-            .readText()
+        val generatedFileText = compilation.compileAndGetFileText()
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
@@ -193,12 +182,8 @@ class ExampleClass(
             )
         )
 
-        val result = compilation.compile()
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-        val generatedFileText = File(compilation.kspSourcesDir, "kotlin/test/ExampleClassFixtures.kt")
-            .readText()
+        val generatedFileText = compilation.compileAndGetFileText()
 
-        println(generatedFileText)
         assertThat(generatedFileText).isEqualToKotlin(
             """
 package test
@@ -238,10 +223,7 @@ enum class ExampleEnum {
             )
         )
 
-        val result = compilation.compile()
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-        val generatedFileText = File(compilation.kspSourcesDir, "kotlin/test/ExampleClassFixtures.kt")
-            .readText()
+        val generatedFileText = compilation.compileAndGetFileText()
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
@@ -276,6 +258,13 @@ enum class ExampleEnum
 
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
         assertThat(result.messages).contains("Enum has no values")
+    }
+
+    @Language("kotlin")
+    private fun KotlinCompilation.compileAndGetFileText(): String {
+        val result = compile()
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
+        return File(kspSourcesDir, "kotlin/test/ExampleClassFixtures.kt").readText()
     }
 
     private fun StringSubject.isEqualToKotlin(@Language("kotlin") expected: String) = isEqualTo(expected)
