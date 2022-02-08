@@ -80,11 +80,7 @@ data class FixtureExampleClass(
 )
 
 @Fixture
-data class EnumExamples(
-    val day: Day,
-)
-
-enum class Day {
+enum class EnumExample {
     MONDAY, TUESDAY
 }
 
@@ -104,6 +100,10 @@ enum class Day {
 /* Sealed classes - how do we pick the subclass to create? */
 
 /* Interfaces - probably should just throw a helpful error */
+
+/* objects - throw a helpful error or return the object */
+
+/* generate the code in the test sources */
 
 /* Support types that cannot be annotated */
 //@Fixture

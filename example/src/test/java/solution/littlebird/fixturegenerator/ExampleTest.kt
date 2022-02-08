@@ -72,9 +72,9 @@ class ExampleTest {
 
     @Test
     fun `generates enum fixtures`() {
-        val expected = EnumExamples(day = Day.MONDAY)
+        val expected = EnumExample.MONDAY
 
-        val actual = EnumExamplesFixtures.enumExamples()
+        val actual = EnumExampleFixtures.enumExample()
 
         assertThat(actual).isEqualTo(expected)
     }

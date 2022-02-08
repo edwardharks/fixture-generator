@@ -1,10 +1,7 @@
 package com.edwardharker.fixturegenerator
 
 import com.google.devtools.ksp.processing.*
-import com.google.devtools.ksp.symbol.KSAnnotated
-import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.google.devtools.ksp.symbol.KSVisitorVoid
+import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.kspDependencies
@@ -29,7 +26,13 @@ class FixtureProcessor(
 
     inner class FixtureVisitor : KSVisitorVoid() {
         override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
-            classDeclaration.primaryConstructor!!.accept(this, data)
+            when (classDeclaration.classKind) {
+                ClassKind.CLASS, ClassKind.ENUM_CLASS -> classDeclaration.primaryConstructor!!.accept(this, data)
+                ClassKind.INTERFACE -> throw IllegalArgumentException("Interfaces cannot be annotated with @Fixture")
+                ClassKind.ENUM_ENTRY -> TODO()
+                ClassKind.OBJECT -> TODO()
+                ClassKind.ANNOTATION_CLASS -> TODO()
+            }
         }
 
         @OptIn(KotlinPoetKspPreview::class)

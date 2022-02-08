@@ -28,14 +28,13 @@ class FixtureGenerator(
             throw IllegalArgumentException("Cannot create fixtures for private classes")
         }
 
-        // Make this a CodeBlock
-        val constructor = buildString {
-            appendLine("${parentDeclaration.qualifiedName!!.asString()}(")
-            for (parameter in functionDeclaration.parameters) {
-                val memberValue = formatValue(parameter)
-                appendLine("    ${parameter.name?.asString()} = $memberValue,")
-            }
-            appendLine(")")
+        val returnValue = when ((parentDeclaration as KSClassDeclaration).classKind) {
+            ClassKind.INTERFACE -> TODO()
+            ClassKind.CLASS -> buildConstructor(parentDeclaration, functionDeclaration)
+            ClassKind.ENUM_CLASS -> getFirstEnumValue(parentDeclaration.asStarProjectedType())
+            ClassKind.ENUM_ENTRY -> TODO()
+            ClassKind.OBJECT -> TODO()
+            ClassKind.ANNOTATION_CLASS -> TODO()
         }
 
         val fixtureTypeName = "${parentDeclaration.simpleName.getShortName()}Fixtures"
@@ -47,7 +46,7 @@ class FixtureGenerator(
                     .addFunction(
                         FunSpec.builder(buildFactoryMethodName(parentDeclaration))
                             .addModifiers(constructorVisibility)
-                            .addCode(CodeBlock.of("return $constructor"))
+                            .addCode(CodeBlock.of("return $returnValue"))
                             .returns(functionDeclaration.returnType!!.resolve().toTypeName())
                             .build()
                     )
@@ -56,13 +55,26 @@ class FixtureGenerator(
             .build()
     }
 
+    private fun buildConstructor(
+        parentDeclaration: KSDeclaration,
+        functionDeclaration: KSFunctionDeclaration
+    ): String {
+        return buildString {
+            appendLine("${parentDeclaration.qualifiedName!!.asString()}(")
+            for (parameter in functionDeclaration.parameters) {
+                val memberValue = formatValue(parameter)
+                appendLine("    ${parameter.name?.asString()} = $memberValue,")
+            }
+            appendLine(")")
+        }
+    }
+
     private fun formatValue(parameter: KSValueParameter): String {
         val type = parameter.type.resolve()
         val declaration = type.declaration
         val nullable = type.isMarkedNullable
         val typeName = declaration.qualifiedName?.asString()
         val isFixture = isFixture(type)
-        val isEnum = declaration.modifiers.contains(ENUM)
         return when {
             nullable -> "null"
             typeName == "kotlin.Int" -> "0"
@@ -86,7 +98,6 @@ class FixtureGenerator(
             typeName == "kotlin.ByteArray" -> "byteArrayOf()"
             typeName == "kotlin.BooleanArray" -> "booleanArrayOf()"
             typeName == "kotlin.CharArray" -> "charArrayOf()"
-            isEnum -> getFirstEnumValue(type)
             isFixture -> buildFactoryFunctionCall(type)
             else -> throw IllegalArgumentException("Unknown property type: $type. Classes must be annotated with @Fixture")
         }

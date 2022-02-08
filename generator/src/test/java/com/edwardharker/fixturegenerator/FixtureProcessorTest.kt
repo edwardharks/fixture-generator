@@ -29,7 +29,7 @@ class ExampleClass()
             )
         )
 
-        val generatedFileText = compilation.compileAndGetFileText()
+        val generatedFileText = compilation.compileAndGetFileText("ExampleClassFixtures")
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
@@ -58,7 +58,7 @@ class ExampleClass(val nullable: String?)
             )
         )
 
-        val generatedFileText = compilation.compileAndGetFileText()
+        val generatedFileText = compilation.compileAndGetFileText("ExampleClassFixtures")
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
@@ -98,7 +98,7 @@ class ExampleClass(
             )
         )
 
-        val generatedFileText = compilation.compileAndGetFileText()
+        val generatedFileText = compilation.compileAndGetFileText("ExampleClassFixtures")
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
@@ -140,7 +140,7 @@ class ExampleClass(
             )
         )
 
-        val generatedFileText = compilation.compileAndGetFileText()
+        val generatedFileText = compilation.compileAndGetFileText("ExampleClassFixtures")
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
@@ -182,7 +182,7 @@ class ExampleClass(
             )
         )
 
-        val generatedFileText = compilation.compileAndGetFileText()
+        val generatedFileText = compilation.compileAndGetFileText("ExampleClassFixtures")
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
@@ -215,7 +215,6 @@ public object ExampleClassFixtures {
 package test
 import com.edwardharker.fixturegenerator.Fixture
 @Fixture
-class ExampleClass(val enum: ExampleEnum)
 enum class ExampleEnum {
     FIRST, SECOND
 }
@@ -223,16 +222,14 @@ enum class ExampleEnum {
             )
         )
 
-        val generatedFileText = compilation.compileAndGetFileText()
+        val generatedFileText = compilation.compileAndGetFileText("ExampleEnumFixtures")
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
 package test
 
-public object ExampleClassFixtures {
-  public fun exampleClass(): ExampleClass = test.ExampleClass(
-      enum = test.ExampleEnum.FIRST,
-  )
+public object ExampleEnumFixtures {
+  public fun exampleEnum(): ExampleEnum = test.ExampleEnum.FIRST
 }
 
         """.trimIndent()
@@ -248,7 +245,6 @@ public object ExampleClassFixtures {
 package test
 import com.edwardharker.fixturegenerator.Fixture
 @Fixture
-class ExampleClass(val enum: ExampleEnum)
 enum class ExampleEnum
                 """.trimIndent()
             )
@@ -260,11 +256,31 @@ enum class ExampleEnum
         assertThat(result.messages).contains("Enum has no values")
     }
 
+    @Test
+    fun `throws error for interfaces`() {
+        val compilation = prepareCompilation(
+            kotlin(
+                "Example.kt",
+                """
+package test
+import com.edwardharker.fixturegenerator.Fixture
+@Fixture
+interface ExampleInterface
+                """.trimIndent()
+            )
+        )
+
+        val result = compilation.compile()
+
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result.messages).contains("Interfaces cannot be annotated with @Fixture")
+    }
+
     @Language("kotlin")
-    private fun KotlinCompilation.compileAndGetFileText(): String {
+    private fun KotlinCompilation.compileAndGetFileText(className: String): String {
         val result = compile()
         assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
-        return File(kspSourcesDir, "kotlin/test/ExampleClassFixtures.kt").readText()
+        return File(kspSourcesDir, "kotlin/test/$className.kt").readText()
     }
 
     private fun StringSubject.isEqualToKotlin(@Language("kotlin") expected: String) = isEqualTo(expected)
