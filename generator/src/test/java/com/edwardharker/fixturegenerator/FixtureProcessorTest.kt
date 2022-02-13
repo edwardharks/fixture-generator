@@ -324,6 +324,46 @@ private object ExampleObject
         assertThat(result.messages).contains("Cannot create fixtures for private classes")
     }
 
+    @Test
+    fun `cannot generate fixtures for private classes`() {
+        val compilation = prepareCompilation(
+            kotlin(
+                "Example.kt",
+                """
+package test
+import com.edwardharker.fixturegenerator.Fixture
+@Fixture
+private class ExampleClass
+                """.trimIndent()
+            )
+        )
+
+        val result = compilation.compile()
+
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result.messages).contains("Cannot create fixtures for private classes")
+    }
+
+    @Test
+    fun `cannot generate fixtures for private constructors`() {
+        val compilation = prepareCompilation(
+            kotlin(
+                "Example.kt",
+                """
+package test
+import com.edwardharker.fixturegenerator.Fixture
+@Fixture
+private class ExampleClass private constructor()
+                """.trimIndent()
+            )
+        )
+
+        val result = compilation.compile()
+
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result.messages).contains("Cannot create fixtures for private primary constructors")
+    }
+
     @Language("kotlin")
     private fun KotlinCompilation.compileAndGetFileText(className: String): String {
         val result = compile()

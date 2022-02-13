@@ -102,6 +102,8 @@ object ExampleObject
 
 /* generate the code in the test sources */
 
+/* Generics */
+
 /* Support types that cannot be annotated */
 //@Fixture
 //data class LibraryTypes(
