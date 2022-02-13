@@ -13,45 +13,63 @@ import com.squareup.kotlinpoet.ksp.toTypeName
 
 class FixtureTypeGenerator {
 
-    @OptIn(KotlinPoetKspPreview::class)
+    fun generateFromObject(classDeclaration: KSClassDeclaration): TypeSpec {
+        val classVisibility = requireNotNull(classDeclaration.getVisibility().toKModifier())
+        validateClass(classVisibility)
+
+        return buildTypeSpec(
+            type = classDeclaration,
+            classVisibility = classVisibility,
+            functionVisibility = classVisibility,
+            returnValue = classDeclaration.qualifiedName!!.asString(),
+            returnType = classDeclaration.asStarProjectedType()
+        )
+    }
+
     fun generateFromConstructor(functionDeclaration: KSFunctionDeclaration): TypeSpec {
         val parentDeclaration = requireNotNull(functionDeclaration.parentDeclaration)
-
         val constructorVisibility = requireNotNull(functionDeclaration.getVisibility().toKModifier())
-        if (constructorVisibility == KModifier.PRIVATE) {
-            throw IllegalArgumentException("Cannot create fixtures for private primary constructors")
-        }
-
         val classVisibility = requireNotNull(parentDeclaration.getVisibility().toKModifier())
-        if (classVisibility == KModifier.PRIVATE) {
-            throw IllegalArgumentException("Cannot create fixtures for private classes")
-        }
+        validateConstructor(constructorVisibility)
+        validateClass(classVisibility)
 
         val returnValue = when ((parentDeclaration as KSClassDeclaration).classKind) {
-            ClassKind.INTERFACE -> TODO()
-            ClassKind.CLASS -> buildConstructor(parentDeclaration, functionDeclaration)
+            ClassKind.CLASS -> buildConstructorCall(parentDeclaration, functionDeclaration)
             ClassKind.ENUM_CLASS -> getFirstEnumValue(parentDeclaration.asStarProjectedType())
-            ClassKind.ENUM_ENTRY -> TODO()
-            ClassKind.OBJECT -> TODO()
-            ClassKind.ANNOTATION_CLASS -> TODO()
+            else -> throw  IllegalStateException("Unexpected class kind: $parentDeclaration")
         }
 
-        val fixtureTypeName = "${parentDeclaration.simpleName.getShortName()}Fixtures"
+        return buildTypeSpec(
+            type = parentDeclaration,
+            classVisibility = classVisibility,
+            functionVisibility = constructorVisibility,
+            returnValue = returnValue,
+            returnType = functionDeclaration.returnType!!.resolve()
+        )
+    }
 
-        return TypeSpec.objectBuilder(fixtureTypeName)
-            .addOriginatingKSFile(functionDeclaration.containingFile!!)
+    @OptIn(KotlinPoetKspPreview::class)
+    private fun buildTypeSpec(
+        type: KSDeclaration,
+        classVisibility: KModifier,
+        functionVisibility: KModifier,
+        returnValue: String,
+        returnType: KSType
+    ): TypeSpec {
+        return TypeSpec.objectBuilder("${type.simpleName.getShortName()}Fixtures")
+            .addOriginatingKSFile(type.containingFile!!)
             .addModifiers(classVisibility)
             .addFunction(
-                FunSpec.builder(buildFactoryMethodName(parentDeclaration))
-                    .addModifiers(constructorVisibility)
+                FunSpec.builder(buildFactoryMethodName(type))
+                    .addModifiers(functionVisibility)
                     .addCode(CodeBlock.of("return $returnValue"))
-                    .returns(functionDeclaration.returnType!!.resolve().toTypeName())
+                    .returns(returnType.toTypeName())
                     .build()
             )
             .build()
     }
 
-    private fun buildConstructor(
+    private fun buildConstructorCall(
         parentDeclaration: KSDeclaration,
         functionDeclaration: KSFunctionDeclaration
     ): String {
@@ -121,6 +139,18 @@ class FixtureTypeGenerator {
         return annotations.any { annotation ->
             annotation.annotationType.resolve()
                 .declaration.qualifiedName?.asString() == Fixture::class.qualifiedName
+        }
+    }
+
+    private fun validateClass(classVisibility: KModifier) {
+        if (classVisibility == KModifier.PRIVATE) {
+            throw IllegalArgumentException("Cannot create fixtures for private classes")
+        }
+    }
+
+    private fun validateConstructor(constructorVisibility: KModifier) {
+        if (constructorVisibility == KModifier.PRIVATE) {
+            throw IllegalArgumentException("Cannot create fixtures for private primary constructors")
         }
     }
 }

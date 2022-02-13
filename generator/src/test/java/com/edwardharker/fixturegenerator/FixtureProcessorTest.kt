@@ -276,6 +276,54 @@ interface ExampleInterface
         assertThat(result.messages).contains("Interfaces cannot be annotated with @Fixture")
     }
 
+    @Test
+    fun `object fixture returns object instance`() {
+        val compilation = prepareCompilation(
+            kotlin(
+                "Example.kt",
+                """
+package test
+import com.edwardharker.fixturegenerator.Fixture
+@Fixture
+object ExampleObject
+                """.trimIndent()
+            )
+        )
+
+        val generatedFileText = compilation.compileAndGetFileText("ExampleObjectFixtures")
+
+        assertThat(generatedFileText).isEqualToKotlin(
+            """
+package test
+
+public object ExampleObjectFixtures {
+  public fun exampleObject(): ExampleObject = test.ExampleObject
+}
+
+        """.trimIndent()
+        )
+    }
+
+    @Test
+    fun `cannot generate fixtures for private objects`() {
+        val compilation = prepareCompilation(
+            kotlin(
+                "Example.kt",
+                """
+package test
+import com.edwardharker.fixturegenerator.Fixture
+@Fixture
+private object ExampleObject
+                """.trimIndent()
+            )
+        )
+
+        val result = compilation.compile()
+
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result.messages).contains("Cannot create fixtures for private classes")
+    }
+
     @Language("kotlin")
     private fun KotlinCompilation.compileAndGetFileText(className: String): String {
         val result = compile()

@@ -78,4 +78,13 @@ class ExampleTest {
 
         assertThat(actual).isEqualTo(expected)
     }
+
+    @Test
+    fun `generates object fixtures`() {
+        val expected = ExampleObject
+
+        val actual = ExampleObjectFixtures.exampleObject()
+
+        assertThat(actual).isEqualTo(expected)
+    }
 }

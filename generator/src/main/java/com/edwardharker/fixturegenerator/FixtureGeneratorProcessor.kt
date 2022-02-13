@@ -11,8 +11,6 @@ import com.squareup.kotlinpoet.ksp.writeTo
 
 class FixtureProcessor(
     private val codeGenerator: CodeGenerator,
-    private val logger: KSPLogger,
-    private val options: Map<String, String>,
 ) : SymbolProcessor {
     private val fixtureTypeGenerator = FixtureTypeGenerator()
     private var types = mutableListOf<Pair<PackageName, TypeSpec>>()
@@ -44,9 +42,12 @@ class FixtureProcessor(
         override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
             when (classDeclaration.classKind) {
                 ClassKind.CLASS, ClassKind.ENUM_CLASS -> classDeclaration.primaryConstructor!!.accept(this, data)
+                ClassKind.OBJECT -> {
+                    val packageName = classDeclaration.packageName.asString()
+                    types += packageName to fixtureTypeGenerator.generateFromObject(classDeclaration)
+                }
                 ClassKind.INTERFACE -> throw IllegalArgumentException("Interfaces cannot be annotated with @Fixture")
                 ClassKind.ENUM_ENTRY -> TODO()
-                ClassKind.OBJECT -> TODO()
                 ClassKind.ANNOTATION_CLASS -> TODO()
             }
         }
@@ -65,8 +66,6 @@ class FixtureProcessorProvider : SymbolProcessorProvider {
     ): SymbolProcessor {
         return FixtureProcessor(
             environment.codeGenerator,
-            environment.logger,
-            environment.options,
         )
     }
 }

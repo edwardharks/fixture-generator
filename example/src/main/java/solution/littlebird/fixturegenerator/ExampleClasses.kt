@@ -84,6 +84,9 @@ enum class EnumExample {
     MONDAY, TUESDAY
 }
 
+@Fixture
+object ExampleObject
+
 // TODO
 
 /* Inner class Fixture should be child of outer class fixture to avoid conflicts */
@@ -96,8 +99,6 @@ enum class EnumExample {
 //}
 
 /* Sealed classes - how do we pick the subclass to create? */
-
-/* objects - throw a helpful error or return the object */
 
 /* generate the code in the test sources */
 
