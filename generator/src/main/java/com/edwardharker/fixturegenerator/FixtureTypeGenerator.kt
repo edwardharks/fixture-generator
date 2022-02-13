@@ -1,21 +1,20 @@
 package com.edwardharker.fixturegenerator
 
 import com.google.devtools.ksp.getVisibility
-import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.*
-import com.google.devtools.ksp.symbol.Modifier.ENUM
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.toKModifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 
-class FixtureGenerator(
-    private val logger: KSPLogger
-) {
+class FixtureTypeGenerator {
 
     @OptIn(KotlinPoetKspPreview::class)
-    fun generateFrom(functionDeclaration: KSFunctionDeclaration): FileSpec {
+    fun generateFromConstructor(functionDeclaration: KSFunctionDeclaration): TypeSpec {
         val parentDeclaration = requireNotNull(functionDeclaration.parentDeclaration)
 
         val constructorVisibility = requireNotNull(functionDeclaration.getVisibility().toKModifier())
@@ -38,18 +37,15 @@ class FixtureGenerator(
         }
 
         val fixtureTypeName = "${parentDeclaration.simpleName.getShortName()}Fixtures"
-        return FileSpec.builder(parentDeclaration.packageName.asString(), fixtureTypeName)
-            .addType(
-                TypeSpec.objectBuilder(fixtureTypeName)
-                    .addOriginatingKSFile(functionDeclaration.containingFile!!)
-                    .addModifiers(classVisibility)
-                    .addFunction(
-                        FunSpec.builder(buildFactoryMethodName(parentDeclaration))
-                            .addModifiers(constructorVisibility)
-                            .addCode(CodeBlock.of("return $returnValue"))
-                            .returns(functionDeclaration.returnType!!.resolve().toTypeName())
-                            .build()
-                    )
+
+        return TypeSpec.objectBuilder(fixtureTypeName)
+            .addOriginatingKSFile(functionDeclaration.containingFile!!)
+            .addModifiers(classVisibility)
+            .addFunction(
+                FunSpec.builder(buildFactoryMethodName(parentDeclaration))
+                    .addModifiers(constructorVisibility)
+                    .addCode(CodeBlock.of("return $returnValue"))
+                    .returns(functionDeclaration.returnType!!.resolve().toTypeName())
                     .build()
             )
             .build()
@@ -126,6 +122,5 @@ class FixtureGenerator(
             annotation.annotationType.resolve()
                 .declaration.qualifiedName?.asString() == Fixture::class.qualifiedName
         }
-
     }
 }

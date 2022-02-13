@@ -86,8 +86,6 @@ enum class EnumExample {
 
 // TODO
 
-/* Improve processor tests */
-
 /* Inner class Fixture should be child of outer class fixture to avoid conflicts */
 //@Fixture
 //class OuterClass(
@@ -98,8 +96,6 @@ enum class EnumExample {
 //}
 
 /* Sealed classes - how do we pick the subclass to create? */
-
-/* Interfaces - probably should just throw a helpful error */
 
 /* objects - throw a helpful error or return the object */
 

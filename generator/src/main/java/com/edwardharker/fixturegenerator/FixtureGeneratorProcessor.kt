@@ -3,6 +3,8 @@ package com.edwardharker.fixturegenerator
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.validate
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.kspDependencies
 import com.squareup.kotlinpoet.ksp.writeTo
@@ -12,7 +14,8 @@ class FixtureProcessor(
     private val logger: KSPLogger,
     private val options: Map<String, String>,
 ) : SymbolProcessor {
-    private val fixtureGenerator = FixtureGenerator(logger)
+    private val fixtureTypeGenerator = FixtureTypeGenerator()
+    private var types = mutableListOf<Pair<PackageName, TypeSpec>>()
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val symbols = resolver.getSymbolsWithAnnotation(Fixture::class.qualifiedName!!)
@@ -22,6 +25,19 @@ class FixtureProcessor(
             .forEach { it.accept(FixtureVisitor(), Unit) }
 
         return ret
+    }
+
+    @OptIn(KotlinPoetKspPreview::class)
+    override fun finish() {
+        for ((packageName, type) in types) {
+            val fileSpec = FileSpec.builder(packageName, type.name!!)
+                .addType(type)
+                .build()
+            fileSpec.writeTo(
+                codeGenerator,
+                fileSpec.kspDependencies(aggregating = false)
+            )
+        }
     }
 
     inner class FixtureVisitor : KSVisitorVoid() {
@@ -37,11 +53,8 @@ class FixtureProcessor(
 
         @OptIn(KotlinPoetKspPreview::class)
         override fun visitFunctionDeclaration(function: KSFunctionDeclaration, data: Unit) {
-            val fileSpec = fixtureGenerator.generateFrom(function)
-            fileSpec.writeTo(
-                codeGenerator,
-                fileSpec.kspDependencies(aggregating = false)
-            )
+            val packageName = function.parentDeclaration!!.packageName.asString()
+            types += packageName to fixtureTypeGenerator.generateFromConstructor(function)
         }
     }
 }
@@ -57,3 +70,5 @@ class FixtureProcessorProvider : SymbolProcessorProvider {
         )
     }
 }
+
+private typealias PackageName = String
