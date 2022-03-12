@@ -49,6 +49,18 @@ class FixtureTypeGenerator {
     }
 
     @OptIn(KotlinPoetKspPreview::class)
+    fun generateEmptyFixtureType(
+        typeName: String,
+        containingFile: KSFile,
+        classVisibility: KModifier
+    ): TypeSpec {
+        return TypeSpec.objectBuilder("${typeName}Fixtures")
+            .addOriginatingKSFile(containingFile)
+            .addModifiers(classVisibility)
+            .build()
+    }
+
+    @OptIn(KotlinPoetKspPreview::class)
     private fun buildTypeSpec(
         type: KSDeclaration,
         classVisibility: KModifier,
@@ -56,9 +68,12 @@ class FixtureTypeGenerator {
         returnValue: String,
         returnType: KSType
     ): TypeSpec {
-        return TypeSpec.objectBuilder("${type.simpleName.getShortName()}Fixtures")
-            .addOriginatingKSFile(type.containingFile!!)
-            .addModifiers(classVisibility)
+        return generateEmptyFixtureType(
+            typeName = type.simpleName.getShortName(),
+            containingFile = type.containingFile!!,
+            classVisibility = classVisibility
+        )
+            .toBuilder()
             .addFunction(
                 FunSpec.builder(buildFactoryMethodName(type))
                     .addModifiers(functionVisibility)

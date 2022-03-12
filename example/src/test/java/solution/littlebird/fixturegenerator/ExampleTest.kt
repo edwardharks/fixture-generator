@@ -87,4 +87,30 @@ class ExampleTest {
 
         assertThat(actual).isEqualTo(expected)
     }
+
+    @Test
+    fun `generated nested class fixtures`() {
+        val expectedOuter = ExampleOuterClass("")
+        val expectedInner = ExampleOuterClass.ExampleInnerClass("")
+        val expectedAnotherInner = ExampleOuterClass.ExampleInnerClass.AnotherExampleInnerClass("")
+
+        val actualOuter = ExampleOuterClassFixtures.exampleOuterClass()
+        val actualInner = ExampleOuterClassFixtures.ExampleInnerClassFixtures.exampleInnerClass()
+        val actualAnotherInner =
+            ExampleOuterClassFixtures.ExampleInnerClassFixtures.AnotherExampleInnerClassFixtures.anotherExampleInnerClass()
+
+        assertThat(actualOuter).isEqualTo(expectedOuter)
+        assertThat(actualInner).isEqualTo(expectedInner)
+        assertThat(expectedAnotherInner).isEqualTo(actualAnotherInner)
+    }
+
+    @Test
+    fun `generated nested class fixtures when not all classes are annotated`() {
+        val expected = ExampleOuterClassNotAnnotated.ExampleInnerClassNotAnnotated.ExampleInnerClass("")
+
+        val actual =
+            ExampleOuterClassNotAnnotatedFixtures.ExampleInnerClassNotAnnotatedFixtures.ExampleInnerClassFixtures.exampleInnerClass()
+
+        assertThat(actual).isEqualTo(expected)
+    }
 }

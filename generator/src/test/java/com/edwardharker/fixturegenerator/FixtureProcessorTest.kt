@@ -364,6 +364,105 @@ private class ExampleClass private constructor()
         assertThat(result.messages).contains("Cannot create fixtures for private primary constructors")
     }
 
+    @Test
+    fun `nested fixture types`() {
+        val compilation = prepareCompilation(
+            kotlin(
+                "Example.kt",
+                """
+package test
+import com.edwardharker.fixturegenerator.Fixture
+@Fixture
+class ExampleClass {
+    @Fixture
+    data class ChildExampleClass(
+        val example: String
+    ) {
+        @Fixture
+        data class AnotherChildExampleClass(
+            val example: Int
+        )
+    }
+}
+                """.trimIndent()
+            )
+        )
+
+        val generatedFileText = compilation.compileAndGetFileText("ExampleClassFixtures")
+
+        assertThat(generatedFileText).isEqualToKotlin(
+            """
+package test
+
+public object ExampleClassFixtures {
+  public fun exampleClass(): ExampleClass = test.ExampleClass(
+  )
+
+  public object ChildExampleClassFixtures {
+    public fun childExampleClass(): ExampleClass.ChildExampleClass =
+        test.ExampleClass.ChildExampleClass(
+        example = "",
+    )
+
+    public object AnotherChildExampleClassFixtures {
+      public fun anotherChildExampleClass(): ExampleClass.ChildExampleClass.AnotherChildExampleClass
+          = test.ExampleClass.ChildExampleClass.AnotherChildExampleClass(
+          example = 0,
+      )
+    }
+  }
+}
+
+        """.trimIndent()
+        )
+    }
+
+    @Test
+    fun `nested types with child fixture`() {
+        val compilation = prepareCompilation(
+            kotlin(
+                "Example.kt",
+                """
+package test
+import com.edwardharker.fixturegenerator.Fixture
+
+object ExampleObject {
+    data class ChildExampleClass(
+        val example: String
+    ) {
+        @Fixture
+        data class AnotherChildExampleClass(
+            val example: Int
+        )
+    }
+}
+                """.trimIndent()
+            )
+        )
+
+        val generatedFileText = compilation.compileAndGetFileText("ExampleObjectFixtures")
+        println(generatedFileText)
+
+        assertThat(generatedFileText).isEqualToKotlin(
+            """
+package test
+
+public object ExampleObjectFixtures {
+  public object ChildExampleClassFixtures {
+    public object AnotherChildExampleClassFixtures {
+      public fun anotherChildExampleClass():
+          ExampleObject.ChildExampleClass.AnotherChildExampleClass =
+          test.ExampleObject.ChildExampleClass.AnotherChildExampleClass(
+          example = 0,
+      )
+    }
+  }
+}
+
+        """.trimIndent()
+        )
+    }
+
     @Language("kotlin")
     private fun KotlinCompilation.compileAndGetFileText(className: String): String {
         val result = compile()

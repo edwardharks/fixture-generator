@@ -86,3 +86,19 @@ enum class EnumExample {
 
 @Fixture
 object ExampleObject
+
+@Fixture
+data class ExampleOuterClass(val example: String) {
+    @Fixture
+    data class ExampleInnerClass(val example: String) {
+        @Fixture
+        data class AnotherExampleInnerClass(val example: String)
+    }
+}
+
+class ExampleOuterClassNotAnnotated {
+    class ExampleInnerClassNotAnnotated {
+        @Fixture
+        data class ExampleInnerClass(val example: String)
+    }
+}
