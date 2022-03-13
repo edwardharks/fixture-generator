@@ -441,7 +441,6 @@ object ExampleObject {
         )
 
         val generatedFileText = compilation.compileAndGetFileText("ExampleObjectFixtures")
-        println(generatedFileText)
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
@@ -461,6 +460,148 @@ public object ExampleObjectFixtures {
 
         """.trimIndent()
         )
+    }
+
+    @Test
+    fun `picks first sealed subclass with annotation`() {
+        val compilation = prepareCompilation(
+            kotlin(
+                "Example.kt",
+                """
+package test
+import com.edwardharker.fixturegenerator.Fixture
+
+@Fixture
+sealed class ExampleSealedClass {
+    data class SealedSubClassWithoutAnnotation(val example: String) : ExampleSealedClass()
+    @Fixture
+    data class SealedSubClass(val example: String) : ExampleSealedClass()
+}
+
+                """.trimIndent()
+            )
+        )
+
+        val generatedFileText = compilation.compileAndGetFileText("ExampleSealedClassFixtures")
+
+        assertThat(generatedFileText).isEqualToKotlin(
+            """
+package test
+
+public object ExampleSealedClassFixtures {
+  public fun exampleSealedClass(): ExampleSealedClass =
+      test.ExampleSealedClassFixtures.SealedSubClassFixtures.sealedSubClass()
+
+  public object SealedSubClassFixtures {
+    public fun sealedSubClass(): ExampleSealedClass.SealedSubClass =
+        test.ExampleSealedClass.SealedSubClass(
+        example = "",
+    )
+  }
+}
+
+        """.trimIndent()
+        )
+    }
+
+    @Test
+    fun `picks first sealed sub object with annotation`() {
+        val compilation = prepareCompilation(
+            kotlin(
+                "Example.kt",
+                """
+package test
+import com.edwardharker.fixturegenerator.Fixture
+
+@Fixture
+sealed class ExampleSealedClass {
+    data class SealedSubClassWithoutAnnotation(val example: String) : ExampleSealedClass()
+    @Fixture
+    object SealedSubObject : ExampleSealedClass()
+}
+
+                """.trimIndent()
+            )
+        )
+
+        val generatedFileText = compilation.compileAndGetFileText("ExampleSealedClassFixtures")
+
+        assertThat(generatedFileText).isEqualToKotlin(
+            """
+package test
+
+public object ExampleSealedClassFixtures {
+  public fun exampleSealedClass(): ExampleSealedClass =
+      test.ExampleSealedClassFixtures.SealedSubObjectFixtures.sealedSubObject()
+
+  public object SealedSubObjectFixtures {
+    public fun sealedSubObject(): ExampleSealedClass.SealedSubObject =
+        test.ExampleSealedClass.SealedSubObject
+  }
+}
+
+        """.trimIndent()
+        )
+    }
+
+    @Test
+    fun `picks first sealed subclass when not nested`() {
+        val compilation = prepareCompilation(
+            kotlin(
+                "Example.kt",
+                """
+package test
+import com.edwardharker.fixturegenerator.Fixture
+
+@Fixture
+sealed class ExampleSealedClass
+    
+@Fixture
+object SealedSubObject : ExampleSealedClass()
+
+
+                """.trimIndent()
+            )
+        )
+
+        val generatedFileText = compilation.compileAndGetFileText("ExampleSealedClassFixtures")
+
+        println(generatedFileText)
+
+        assertThat(generatedFileText).isEqualToKotlin(
+            """
+package test
+
+public object ExampleSealedClassFixtures {
+  public fun exampleSealedClass(): ExampleSealedClass =
+      test.SealedSubObjectFixtures.sealedSubObject()
+}
+
+        """.trimIndent()
+        )
+    }
+
+    @Test
+    fun `throws error when sealed class has no annotated subclasses`() {
+        val compilation = prepareCompilation(
+            kotlin(
+                "Example.kt",
+                """
+package test
+import com.edwardharker.fixturegenerator.Fixture
+
+@Fixture
+sealed class ExampleSealedClass {
+    data class SealedSubClassWithoutAnnotation : ExampleSealedClass()
+}
+                """.trimIndent()
+            )
+        )
+
+        val result = compilation.compile()
+
+        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
+        assertThat(result.messages).contains("Sealed class has no subclasses annotated with @Fixture")
     }
 
     @Language("kotlin")

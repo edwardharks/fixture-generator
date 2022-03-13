@@ -91,7 +91,8 @@ class ExampleTest {
     @Test
     fun `generated nested class fixtures`() {
         val expectedOuter = ExampleOuterClass("")
-        val expectedInner = ExampleOuterClass.ExampleInnerClass("")
+        val expectedInner =
+            ExampleOuterClass.ExampleInnerClass(ExampleOuterClass.ExampleInnerClass.AnotherExampleInnerClass(""))
         val expectedAnotherInner = ExampleOuterClass.ExampleInnerClass.AnotherExampleInnerClass("")
 
         val actualOuter = ExampleOuterClassFixtures.exampleOuterClass()
@@ -110,6 +111,24 @@ class ExampleTest {
 
         val actual =
             ExampleOuterClassNotAnnotatedFixtures.ExampleInnerClassNotAnnotatedFixtures.ExampleInnerClassFixtures.exampleInnerClass()
+
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun `generates sealed class fixtures when subclasses are nested`() {
+        val expected = ExampleNestedSealedClass.FirstSubClass("")
+
+        val actual = ExampleNestedSealedClassFixtures.exampleNestedSealedClass()
+
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun `generates sealed class fixtures when subclasses are not nested`() {
+        val expected = NotANestedSealedSubClass
+
+        val actual = ExampleSealedClassFixtures.exampleSealedClass()
 
         assertThat(actual).isEqualTo(expected)
     }

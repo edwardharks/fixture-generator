@@ -90,7 +90,7 @@ object ExampleObject
 @Fixture
 data class ExampleOuterClass(val example: String) {
     @Fixture
-    data class ExampleInnerClass(val example: String) {
+    data class ExampleInnerClass(val example: AnotherExampleInnerClass) {
         @Fixture
         data class AnotherExampleInnerClass(val example: String)
     }
@@ -102,3 +102,18 @@ class ExampleOuterClassNotAnnotated {
         data class ExampleInnerClass(val example: String)
     }
 }
+
+@Fixture
+sealed class ExampleNestedSealedClass {
+    @Fixture
+    data class FirstSubClass(val example: String) : ExampleNestedSealedClass()
+
+    @Fixture
+    data class SecondSubClass(val example: String) : ExampleNestedSealedClass()
+}
+
+@Fixture
+sealed class ExampleSealedClass
+
+@Fixture
+object NotANestedSealedSubClass : ExampleSealedClass()

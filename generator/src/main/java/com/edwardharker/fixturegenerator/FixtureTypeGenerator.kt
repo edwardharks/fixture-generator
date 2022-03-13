@@ -33,9 +33,12 @@ class FixtureTypeGenerator {
         validateConstructor(constructorVisibility)
         validateClass(classVisibility)
 
-        val returnValue = when ((parentDeclaration as KSClassDeclaration).classKind) {
-            ClassKind.CLASS -> buildConstructorCall(parentDeclaration, functionDeclaration)
-            ClassKind.ENUM_CLASS -> getFirstEnumValue(parentDeclaration.asStarProjectedType())
+        val classKind = (parentDeclaration as KSClassDeclaration).classKind
+        val starProjectedType = parentDeclaration.asStarProjectedType()
+        val returnValue = when {
+            parentDeclaration.modifiers.contains(Modifier.SEALED) -> getFirstSealedSubClass(starProjectedType)
+            classKind == ClassKind.CLASS -> buildConstructorCall(parentDeclaration, functionDeclaration)
+            classKind == ClassKind.ENUM_CLASS -> getFirstEnumValue(starProjectedType)
             else -> throw  IllegalStateException("Unexpected class kind: $parentDeclaration")
         }
 
@@ -140,10 +143,27 @@ class FixtureTypeGenerator {
             ?: throw IllegalArgumentException("Enum has no values")
     }
 
+    private fun getFirstSealedSubClass(type: KSType): String {
+        return (type.declaration as KSClassDeclaration).getSealedSubclasses()
+            .filter { it.annotations.any { annotation -> annotation.shortName.asString() == Fixture::class.simpleName } }
+            .firstOrNull()
+            ?.let { sealedSubClass ->
+                buildFactoryFunctionCall((sealedSubClass).asStarProjectedType())
+            }
+            ?: throw IllegalArgumentException("Sealed class has no subclasses annotated with @Fixture")
+    }
+
     private fun buildFactoryFunctionCall(type: KSType): String {
-        val qualifiedName = type.declaration.qualifiedName
-        return "${qualifiedName?.getQualifier()}.${qualifiedName?.getShortName()}Fixtures" +
-                ".${buildFactoryMethodName(type.declaration)}()"
+        val declaration = type.declaration
+        val functionCall = StringBuilder("${buildFactoryMethodName(declaration)}()")
+        functionCall.insert(0, "${declaration.simpleName.asString()}Fixtures.")
+        var parent = declaration.parent
+        while (parent != null && parent is KSDeclaration) {
+            functionCall.insert(0, "${parent.simpleName.asString()}Fixtures.")
+            parent = parent.parent
+        }
+        functionCall.insert(0, "${declaration.packageName.asString()}.")
+        return functionCall.toString()
     }
 
     private fun buildFactoryMethodName(type: KSDeclaration) =
