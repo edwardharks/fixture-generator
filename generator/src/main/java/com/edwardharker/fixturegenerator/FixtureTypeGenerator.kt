@@ -1,3 +1,5 @@
+@file:OptIn(KotlinPoetKspPreview::class)
+
 package com.edwardharker.fixturegenerator
 
 import com.google.devtools.ksp.getVisibility
@@ -5,28 +7,24 @@ import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
-import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.toKModifier
 import com.squareup.kotlinpoet.ksp.toTypeName
 
 class FixtureTypeGenerator {
 
-    fun generateFromObject(classDeclaration: KSClassDeclaration): TypeSpec {
+    fun generateFromObject(classDeclaration: KSClassDeclaration): FunSpec {
         val classVisibility = requireNotNull(classDeclaration.getVisibility().toKModifier())
         validateClass(classVisibility)
 
-        return buildTypeSpec(
-            type = classDeclaration,
-            classVisibility = classVisibility,
-            functionVisibility = classVisibility,
-            returnValue = classDeclaration.qualifiedName!!.asString(),
-            returnType = classDeclaration.asStarProjectedType()
-        )
+        return FunSpec.builder(buildFactoryMethodName(classDeclaration))
+            .addModifiers(classVisibility)
+            .addCode(CodeBlock.of("return ${classDeclaration.qualifiedName!!.asString()}"))
+            .returns(classDeclaration.asStarProjectedType().toTypeName())
+            .build()
     }
 
-    fun generateFromConstructor(functionDeclaration: KSFunctionDeclaration): TypeSpec {
+    fun generateFromConstructor(functionDeclaration: KSFunctionDeclaration): FunSpec {
         val parentDeclaration = requireNotNull(functionDeclaration.parentDeclaration)
         val constructorVisibility = requireNotNull(functionDeclaration.getVisibility().toKModifier())
         val classVisibility = requireNotNull(parentDeclaration.getVisibility().toKModifier())
@@ -42,48 +40,10 @@ class FixtureTypeGenerator {
             else -> throw  IllegalStateException("Unexpected class kind: $parentDeclaration")
         }
 
-        return buildTypeSpec(
-            type = parentDeclaration,
-            classVisibility = classVisibility,
-            functionVisibility = constructorVisibility,
-            returnValue = returnValue,
-            returnType = functionDeclaration.returnType!!.resolve()
-        )
-    }
-
-    @OptIn(KotlinPoetKspPreview::class)
-    fun generateEmptyFixtureType(
-        typeName: String,
-        containingFile: KSFile,
-        classVisibility: KModifier
-    ): TypeSpec {
-        return TypeSpec.objectBuilder("${typeName}Fixtures")
-            .addOriginatingKSFile(containingFile)
-            .addModifiers(classVisibility)
-            .build()
-    }
-
-    @OptIn(KotlinPoetKspPreview::class)
-    private fun buildTypeSpec(
-        type: KSDeclaration,
-        classVisibility: KModifier,
-        functionVisibility: KModifier,
-        returnValue: String,
-        returnType: KSType
-    ): TypeSpec {
-        return generateEmptyFixtureType(
-            typeName = type.simpleName.getShortName(),
-            containingFile = type.containingFile!!,
-            classVisibility = classVisibility
-        )
-            .toBuilder()
-            .addFunction(
-                FunSpec.builder(buildFactoryMethodName(type))
-                    .addModifiers(functionVisibility)
-                    .addCode(CodeBlock.of("return $returnValue"))
-                    .returns(returnType.toTypeName())
-                    .build()
-            )
+        return FunSpec.builder(buildFactoryMethodName(parentDeclaration))
+            .addModifiers(constructorVisibility)
+            .addCode(CodeBlock.of("return $returnValue"))
+            .returns(functionDeclaration.returnType!!.resolve().toTypeName())
             .build()
     }
 

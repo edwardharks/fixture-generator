@@ -23,22 +23,23 @@ class FixtureProcessorTest {
                 """
 package test
 import com.edwardharker.fixturegenerator.Fixture
-@Fixture
-class ExampleClass()
+
+class ExampleClass
+
+@Fixture(ExampleClass::class)
+object ExampleClassFixtures
                 """.trimIndent()
             )
         )
 
-        val generatedFileText = compilation.compileAndGetFileText("ExampleClassFixtures")
+        val generatedFileText = compilation.compileAndGetFileText("ExampleExt")
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
 package test
 
-public object ExampleClassFixtures {
-  public fun exampleClass(): ExampleClass = test.ExampleClass(
-  )
-}
+public fun ExampleClassFixtures.exampleClass(): ExampleClass = test.ExampleClass(
+)
 
         """.trimIndent()
         )
@@ -52,23 +53,24 @@ public object ExampleClassFixtures {
                 """
 package test
 import com.edwardharker.fixturegenerator.Fixture
-@Fixture
+
 class ExampleClass(val nullable: String?)
+
+@Fixture(ExampleClass::class)
+object ExampleClassFixtures
                 """.trimIndent()
             )
         )
 
-        val generatedFileText = compilation.compileAndGetFileText("ExampleClassFixtures")
+        val generatedFileText = compilation.compileAndGetFileText("ExampleExt")
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
 package test
 
-public object ExampleClassFixtures {
-  public fun exampleClass(): ExampleClass = test.ExampleClass(
-      nullable = null,
-  )
-}
+public fun ExampleClassFixtures.exampleClass(): ExampleClass = test.ExampleClass(
+    nullable = null,
+)
 
         """.trimIndent()
         )
@@ -82,7 +84,7 @@ public object ExampleClassFixtures {
                 """
 package test
 import com.edwardharker.fixturegenerator.Fixture
-@Fixture
+
 class ExampleClass(
     val string: String,
     val char: Char,
@@ -94,29 +96,30 @@ class ExampleClass(
     val byte: Byte,
     val boolean: Boolean,
 )
+
+@Fixture(ExampleClass::class)
+object ExampleClassFixtures
                 """.trimIndent()
             )
         )
 
-        val generatedFileText = compilation.compileAndGetFileText("ExampleClassFixtures")
+        val generatedFileText = compilation.compileAndGetFileText("ExampleExt")
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
 package test
 
-public object ExampleClassFixtures {
-  public fun exampleClass(): ExampleClass = test.ExampleClass(
-      string = "",
-      char = '\u0000',
-      int = 0,
-      float = 0.0F,
-      double = 0.0,
-      short = 0,
-      long = 0L,
-      byte = 0,
-      boolean = false,
-  )
-}
+public fun ExampleClassFixtures.exampleClass(): ExampleClass = test.ExampleClass(
+    string = "",
+    char = '\u0000',
+    int = 0,
+    float = 0.0F,
+    double = 0.0,
+    short = 0,
+    long = 0L,
+    byte = 0,
+    boolean = false,
+)
 
         """.trimIndent()
         )
@@ -130,29 +133,30 @@ public object ExampleClassFixtures {
                 """
 package test
 import com.edwardharker.fixturegenerator.Fixture
-@Fixture
+
 class ExampleClass(
     val list: List<String>,
     val map: Map<String, String>,
     val set: Set<String>,
 )
+
+@Fixture(ExampleClass::class)
+object ExampleClassFixtures
                 """.trimIndent()
             )
         )
 
-        val generatedFileText = compilation.compileAndGetFileText("ExampleClassFixtures")
+        val generatedFileText = compilation.compileAndGetFileText("ExampleExt")
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
 package test
 
-public object ExampleClassFixtures {
-  public fun exampleClass(): ExampleClass = test.ExampleClass(
-      list = emptyList(),
-      map = emptyMap(),
-      set = emptySet(),
-  )
-}
+public fun ExampleClassFixtures.exampleClass(): ExampleClass = test.ExampleClass(
+    list = emptyList(),
+    map = emptyMap(),
+    set = emptySet(),
+)
 
         """.trimIndent()
         )
@@ -166,7 +170,7 @@ public object ExampleClassFixtures {
                 """
 package test
 import com.edwardharker.fixturegenerator.Fixture
-@Fixture
+
 class ExampleClass(
     val array: Array<String>,
     val intArray: IntArray,
@@ -178,33 +182,73 @@ class ExampleClass(
     val byteArray: ByteArray,
     val booleanArray: BooleanArray,
 )
+
+@Fixture(ExampleClass::class)
+object ExampleClassFixtures
                 """.trimIndent()
             )
         )
 
-        val generatedFileText = compilation.compileAndGetFileText("ExampleClassFixtures")
+        val generatedFileText = compilation.compileAndGetFileText("ExampleExt")
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
 package test
 
-public object ExampleClassFixtures {
-  public fun exampleClass(): ExampleClass = test.ExampleClass(
-      array = emptyArray(),
-      intArray = intArrayOf(),
-      charArray = charArrayOf(),
-      floatArray = floatArrayOf(),
-      doubleArray = doubleArrayOf(),
-      shortArray = shortArrayOf(),
-      longArray = longArrayOf(),
-      byteArray = byteArrayOf(),
-      booleanArray = booleanArrayOf(),
-  )
-}
+public fun ExampleClassFixtures.exampleClass(): ExampleClass = test.ExampleClass(
+    array = emptyArray(),
+    intArray = intArrayOf(),
+    charArray = charArrayOf(),
+    floatArray = floatArrayOf(),
+    doubleArray = doubleArrayOf(),
+    shortArray = shortArrayOf(),
+    longArray = longArrayOf(),
+    byteArray = byteArrayOf(),
+    booleanArray = booleanArrayOf(),
+)
 
         """.trimIndent()
         )
     }
+
+    @Test
+    fun `fixture types call fixture`() {
+        val compilation = prepareCompilation(
+            kotlin(
+                "Example.kt",
+                """
+package test
+import com.edwardharker.fixturegenerator.Fixture
+
+class ExampleClass(
+    val fixture: AnotherExample
+)
+
+class AnotherExample
+
+@Fixture(ExampleClass::class)
+object ExampleClassFixtures
+
+@Fixture(AnotherExample::class)
+object AnotherExampleFixtures
+                """.trimIndent()
+            )
+        )
+
+        val generatedFileText = compilation.compileAndGetFileText("ExampleExt")
+
+        println(generatedFileText)
+
+        assertThat(generatedFileText).isEqualToKotlin(
+            """
+package test
+
+
+
+        """.trimIndent()
+        )
+    }
+
 
     @Test
     fun `picks first enum value`() {
@@ -214,23 +258,24 @@ public object ExampleClassFixtures {
                 """
 package test
 import com.edwardharker.fixturegenerator.Fixture
-@Fixture
+
 enum class ExampleEnum {
     FIRST, SECOND
 }
+
+@Fixture(ExampleEnum::class)
+object ExampleEnumFixtures
                 """.trimIndent()
             )
         )
 
-        val generatedFileText = compilation.compileAndGetFileText("ExampleEnumFixtures")
+        val generatedFileText = compilation.compileAndGetFileText("ExampleExt")
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
 package test
 
-public object ExampleEnumFixtures {
-  public fun exampleEnum(): ExampleEnum = test.ExampleEnum.FIRST
-}
+public fun ExampleEnumFixtures.exampleEnum(): ExampleEnum = test.ExampleEnum.FIRST
 
         """.trimIndent()
         )
@@ -244,8 +289,11 @@ public object ExampleEnumFixtures {
                 """
 package test
 import com.edwardharker.fixturegenerator.Fixture
-@Fixture
+
 enum class ExampleEnum
+
+@Fixture(ExampleEnum::class)
+object ExampleEnumFixtures
                 """.trimIndent()
             )
         )
@@ -264,8 +312,11 @@ enum class ExampleEnum
                 """
 package test
 import com.edwardharker.fixturegenerator.Fixture
-@Fixture
+
 interface ExampleInterface
+
+@Fixture(ExampleInterface::class)
+object ExampleInterfaceFixtures
                 """.trimIndent()
             )
         )
@@ -284,21 +335,22 @@ interface ExampleInterface
                 """
 package test
 import com.edwardharker.fixturegenerator.Fixture
-@Fixture
+
 object ExampleObject
+
+@Fixture(ExampleObject::class)
+object ExampleObjectFixtures
                 """.trimIndent()
             )
         )
 
-        val generatedFileText = compilation.compileAndGetFileText("ExampleObjectFixtures")
+        val generatedFileText = compilation.compileAndGetFileText("ExampleExt")
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
 package test
 
-public object ExampleObjectFixtures {
-  public fun exampleObject(): ExampleObject = test.ExampleObject
-}
+public fun ExampleObjectFixtures.exampleObject(): ExampleObject = test.ExampleObject
 
         """.trimIndent()
         )
@@ -312,8 +364,11 @@ public object ExampleObjectFixtures {
                 """
 package test
 import com.edwardharker.fixturegenerator.Fixture
-@Fixture
+
 private object ExampleObject
+
+@Fixture(ExampleObject::class)
+object ExampleObjectFixtures
                 """.trimIndent()
             )
         )
@@ -332,8 +387,11 @@ private object ExampleObject
                 """
 package test
 import com.edwardharker.fixturegenerator.Fixture
-@Fixture
+
 private class ExampleClass
+
+@Fixture(ExampleClass::class)
+object ExampleClassFixtures
                 """.trimIndent()
             )
         )
@@ -352,8 +410,11 @@ private class ExampleClass
                 """
 package test
 import com.edwardharker.fixturegenerator.Fixture
-@Fixture
+
 private class ExampleClass private constructor()
+
+@Fixture(ExampleClass::class)
+object ExampleClassFixtures
                 """.trimIndent()
             )
         )
@@ -372,46 +433,51 @@ private class ExampleClass private constructor()
                 """
 package test
 import com.edwardharker.fixturegenerator.Fixture
-@Fixture
+
 class ExampleClass {
-    @Fixture
     data class ChildExampleClass(
         val example: String
     ) {
-        @Fixture
         data class AnotherChildExampleClass(
             val example: Int
         )
     }
 }
+
+@Fixture(ExampleClass::class)
+object ExampleClassFixtures {
+    @Fixture(ExampleClass.ChildExampleClass::class)
+    object ChildExampleClassFixtures {
+        @Fixture(ExampleClass.ChildExampleClass.AnotherChildExampleClass::class)
+        object AnotherChildExampleClassFixtures
+    }
+}
+
+
                 """.trimIndent()
             )
         )
 
-        val generatedFileText = compilation.compileAndGetFileText("ExampleClassFixtures")
+        val generatedFileText = compilation.compileAndGetFileText("ExampleExt")
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
 package test
 
-public object ExampleClassFixtures {
-  public fun exampleClass(): ExampleClass = test.ExampleClass(
-  )
+public fun ExampleClassFixtures.exampleClass(): ExampleClass = test.ExampleClass(
+)
 
-  public object ChildExampleClassFixtures {
-    public fun childExampleClass(): ExampleClass.ChildExampleClass =
-        test.ExampleClass.ChildExampleClass(
-        example = "",
-    )
+public fun ExampleClassFixtures.ChildExampleClassFixtures.childExampleClass():
+    ExampleClass.ChildExampleClass = test.ExampleClass.ChildExampleClass(
+    example = "",
+)
 
-    public object AnotherChildExampleClassFixtures {
-      public fun anotherChildExampleClass(): ExampleClass.ChildExampleClass.AnotherChildExampleClass
-          = test.ExampleClass.ChildExampleClass.AnotherChildExampleClass(
-          example = 0,
-      )
-    }
-  }
-}
+public
+    fun ExampleClassFixtures.ChildExampleClassFixtures.AnotherChildExampleClassFixtures.anotherChildExampleClass():
+    ExampleClass.ChildExampleClass.AnotherChildExampleClass =
+    test.ExampleClass.ChildExampleClass.AnotherChildExampleClass(
+    example = 0,
+)
 
         """.trimIndent()
         )
@@ -430,178 +496,32 @@ object ExampleObject {
     data class ChildExampleClass(
         val example: String
     ) {
-        @Fixture
         data class AnotherChildExampleClass(
             val example: Int
         )
     }
 }
+
+@Fixture(ExampleObject.ChildExampleClass.AnotherChildExampleClass::class)
+object AnotherChildExampleClassFixtures
                 """.trimIndent()
             )
         )
 
-        val generatedFileText = compilation.compileAndGetFileText("ExampleObjectFixtures")
+        val generatedFileText = compilation.compileAndGetFileText("ExampleExt")
 
         assertThat(generatedFileText).isEqualToKotlin(
             """
 package test
 
-public object ExampleObjectFixtures {
-  public object ChildExampleClassFixtures {
-    public object AnotherChildExampleClassFixtures {
-      public fun anotherChildExampleClass():
-          ExampleObject.ChildExampleClass.AnotherChildExampleClass =
-          test.ExampleObject.ChildExampleClass.AnotherChildExampleClass(
-          example = 0,
-      )
-    }
-  }
-}
+public fun AnotherChildExampleClassFixtures.anotherChildExampleClass():
+    ExampleObject.ChildExampleClass.AnotherChildExampleClass =
+    test.ExampleObject.ChildExampleClass.AnotherChildExampleClass(
+    example = 0,
+)
 
         """.trimIndent()
         )
-    }
-
-    @Test
-    fun `picks first sealed subclass with annotation`() {
-        val compilation = prepareCompilation(
-            kotlin(
-                "Example.kt",
-                """
-package test
-import com.edwardharker.fixturegenerator.Fixture
-
-@Fixture
-sealed class ExampleSealedClass {
-    data class SealedSubClassWithoutAnnotation(val example: String) : ExampleSealedClass()
-    @Fixture
-    data class SealedSubClass(val example: String) : ExampleSealedClass()
-}
-
-                """.trimIndent()
-            )
-        )
-
-        val generatedFileText = compilation.compileAndGetFileText("ExampleSealedClassFixtures")
-
-        assertThat(generatedFileText).isEqualToKotlin(
-            """
-package test
-
-public object ExampleSealedClassFixtures {
-  public fun exampleSealedClass(): ExampleSealedClass =
-      test.ExampleSealedClassFixtures.SealedSubClassFixtures.sealedSubClass()
-
-  public object SealedSubClassFixtures {
-    public fun sealedSubClass(): ExampleSealedClass.SealedSubClass =
-        test.ExampleSealedClass.SealedSubClass(
-        example = "",
-    )
-  }
-}
-
-        """.trimIndent()
-        )
-    }
-
-    @Test
-    fun `picks first sealed sub object with annotation`() {
-        val compilation = prepareCompilation(
-            kotlin(
-                "Example.kt",
-                """
-package test
-import com.edwardharker.fixturegenerator.Fixture
-
-@Fixture
-sealed class ExampleSealedClass {
-    data class SealedSubClassWithoutAnnotation(val example: String) : ExampleSealedClass()
-    @Fixture
-    object SealedSubObject : ExampleSealedClass()
-}
-
-                """.trimIndent()
-            )
-        )
-
-        val generatedFileText = compilation.compileAndGetFileText("ExampleSealedClassFixtures")
-
-        assertThat(generatedFileText).isEqualToKotlin(
-            """
-package test
-
-public object ExampleSealedClassFixtures {
-  public fun exampleSealedClass(): ExampleSealedClass =
-      test.ExampleSealedClassFixtures.SealedSubObjectFixtures.sealedSubObject()
-
-  public object SealedSubObjectFixtures {
-    public fun sealedSubObject(): ExampleSealedClass.SealedSubObject =
-        test.ExampleSealedClass.SealedSubObject
-  }
-}
-
-        """.trimIndent()
-        )
-    }
-
-    @Test
-    fun `picks first sealed subclass when not nested`() {
-        val compilation = prepareCompilation(
-            kotlin(
-                "Example.kt",
-                """
-package test
-import com.edwardharker.fixturegenerator.Fixture
-
-@Fixture
-sealed class ExampleSealedClass
-    
-@Fixture
-object SealedSubObject : ExampleSealedClass()
-
-
-                """.trimIndent()
-            )
-        )
-
-        val generatedFileText = compilation.compileAndGetFileText("ExampleSealedClassFixtures")
-
-        println(generatedFileText)
-
-        assertThat(generatedFileText).isEqualToKotlin(
-            """
-package test
-
-public object ExampleSealedClassFixtures {
-  public fun exampleSealedClass(): ExampleSealedClass =
-      test.SealedSubObjectFixtures.sealedSubObject()
-}
-
-        """.trimIndent()
-        )
-    }
-
-    @Test
-    fun `throws error when sealed class has no annotated subclasses`() {
-        val compilation = prepareCompilation(
-            kotlin(
-                "Example.kt",
-                """
-package test
-import com.edwardharker.fixturegenerator.Fixture
-
-@Fixture
-sealed class ExampleSealedClass {
-    data class SealedSubClassWithoutAnnotation : ExampleSealedClass()
-}
-                """.trimIndent()
-            )
-        )
-
-        val result = compilation.compile()
-
-        assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.COMPILATION_ERROR)
-        assertThat(result.messages).contains("Sealed class has no subclasses annotated with @Fixture")
     }
 
     @Language("kotlin")

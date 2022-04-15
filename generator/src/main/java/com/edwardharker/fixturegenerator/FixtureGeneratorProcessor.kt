@@ -1,21 +1,25 @@
+@file:OptIn(KspExperimental::class, KotlinPoetKspPreview::class)
+
 package com.edwardharker.fixturegenerator
 
+import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.kspDependencies
+import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
-import java.util.*
+import kotlin.reflect.KClass
 
 class FixtureProcessor(
     private val codeGenerator: CodeGenerator,
+    private val logger: KSPLogger,
 ) : SymbolProcessor {
     private val fixtureTypeGenerator = FixtureTypeGenerator()
-    private val types = mutableMapOf<TypeName, FixtureType>()
+    private val fileToFunctions = mutableMapOf<FileSpec, MutableList<FunSpec>>()
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val symbols = resolver.getSymbolsWithAnnotation(Fixture::class.qualifiedName!!)
@@ -27,19 +31,14 @@ class FixtureProcessor(
         return ret
     }
 
-    @OptIn(KotlinPoetKspPreview::class)
     override fun finish() {
-        for ((typeName, fixtureType) in types) {
-            val declaration = fixtureType.declaration
-            val packageName = declaration.packageName.asString()
-            val typeSpecBuilder = fixtureType.createTypeSpecBuilder(typeName)
+        for ((file, functions) in fileToFunctions) {
+            val fileBuilder = file.toBuilder()
+            for (function in functions) {
+                fileBuilder.addFunction(function)
+            }
 
-            addChildTypesToTypeSpec(typeSpecBuilder, fixtureType.children)
-
-            val typeSpec = typeSpecBuilder.build()
-            val fileSpec = FileSpec.builder(packageName, typeSpec.name!!)
-                .addType(typeSpec)
-                .build()
+            val fileSpec = fileBuilder.build()
             fileSpec.writeTo(
                 codeGenerator,
                 fileSpec.kspDependencies(aggregating = false)
@@ -47,76 +46,51 @@ class FixtureProcessor(
         }
     }
 
-    private fun addChildTypesToTypeSpec(outerTypeSpecBuilder: TypeSpec.Builder, children: Map<TypeName, FixtureType>) {
-        for ((typeName, fixtureType) in children) {
-            val typeSpecBuilder = fixtureType.createTypeSpecBuilder(typeName)
-            addChildTypesToTypeSpec(typeSpecBuilder, fixtureType.children)
-            outerTypeSpecBuilder.addType(typeSpecBuilder.build())
+    private fun createFixture(classDeclaration: KSClassDeclaration) {
+        val fixtureAnnotation = classDeclaration.getKSAnnotationByType(Fixture::class).first()
+        val fixtureType = fixtureAnnotation.arguments.first { it.name?.asString() == "clazz" }.value as KSType
+        val fixtureClass = fixtureType.declaration as KSClassDeclaration
+        val fixtureFunction =
+            when (fixtureClass.classKind) {
+                ClassKind.INTERFACE -> throw IllegalArgumentException("Interfaces cannot be annotated with @Fixture")
+                ClassKind.CLASS, ClassKind.ENUM_CLASS -> {
+                    val constructor = fixtureClass.primaryConstructor
+                    fixtureTypeGenerator.generateFromConstructor(constructor!!)
+                }
+                ClassKind.ENUM_ENTRY -> TODO()
+                ClassKind.OBJECT -> fixtureTypeGenerator.generateFromObject(fixtureClass)
+                ClassKind.ANNOTATION_CLASS -> TODO()
+            }
+                .toBuilder()
+                .receiver(classDeclaration.asStarProjectedType().toTypeName())
+                .build()
+        val fileName = classDeclaration.containingFile?.fileName?.removeSuffix(".kt") + "Ext"
+        val fileSpec = FileSpec.builder(classDeclaration.packageName.asString(), fileName).build()
+
+        if (!fileToFunctions.containsKey(fileSpec)) {
+            fileToFunctions[fileSpec] = mutableListOf()
+        }
+        fileToFunctions.getValue(fileSpec).add(fixtureFunction)
+    }
+
+    private fun <T : Annotation> KSAnnotated.getKSAnnotationByType(annotationKClass: KClass<T>): Sequence<KSAnnotation> {
+        return this.annotations.filter {
+            it.shortName.getShortName() == annotationKClass.simpleName && it.annotationType.resolve().declaration
+                .qualifiedName?.asString() == annotationKClass.qualifiedName
         }
     }
+
 
     inner class FixtureVisitor : KSVisitorVoid() {
         override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
             when (classDeclaration.classKind) {
-                ClassKind.CLASS, ClassKind.ENUM_CLASS -> classDeclaration.primaryConstructor!!.accept(this, data)
-                ClassKind.OBJECT -> {
-                    val typeHierarchy = buildTypesHierarchy(classDeclaration)
-                    val typeSpec = fixtureTypeGenerator.generateFromObject(classDeclaration)
-                    addTypeSpecToFixtureType(types, typeHierarchy, typeSpec, classDeclaration)
-                }
-                ClassKind.INTERFACE -> throw IllegalArgumentException("Interfaces cannot be annotated with @Fixture")
+                ClassKind.CLASS, ClassKind.ENUM_CLASS -> TODO()
+                ClassKind.OBJECT -> createFixture(classDeclaration)
+                ClassKind.INTERFACE -> TODO()
                 ClassKind.ENUM_ENTRY -> TODO()
                 ClassKind.ANNOTATION_CLASS -> TODO()
             }
         }
-
-        @OptIn(KotlinPoetKspPreview::class)
-        override fun visitFunctionDeclaration(function: KSFunctionDeclaration, data: Unit) {
-            val typeHierarchy = buildTypesHierarchy(function)
-            val typeSpec = fixtureTypeGenerator.generateFromConstructor(function)
-            addTypeSpecToFixtureType(types, typeHierarchy, typeSpec, function)
-        }
-    }
-
-    private fun addTypeSpecToFixtureType(
-        types: MutableMap<String, FixtureType>,
-        typeHierarchy: Deque<String>,
-        typeSpec: TypeSpec,
-        declaration: KSDeclaration
-    ) {
-        val type = typeHierarchy.pop()
-        var fixtureType = types[type]
-        if (fixtureType == null) {
-            fixtureType = FixtureType(declaration)
-            types[type] = fixtureType
-        }
-        if (typeHierarchy.isEmpty()) {
-            fixtureType.typeSpec = typeSpec
-        } else {
-            addTypeSpecToFixtureType(fixtureType.children, typeHierarchy, typeSpec, declaration)
-        }
-    }
-
-    private fun buildTypesHierarchy(declaration: KSDeclaration): Deque<String> {
-        val typeHierarchy = LinkedList<String>()
-        if (declaration is KSClassDeclaration) {
-            typeHierarchy.push(declaration.simpleName.asString())
-        }
-        var parent = declaration.parent
-        while (parent != null && parent is KSDeclaration) {
-            typeHierarchy.push(parent.simpleName.asString())
-            parent = parent.parent
-        }
-        return typeHierarchy
-    }
-
-    private fun FixtureType.createTypeSpecBuilder(typeName: String): TypeSpec.Builder {
-        return typeSpec?.toBuilder()
-            ?: fixtureTypeGenerator.generateEmptyFixtureType(
-                typeName = typeName,
-                containingFile = declaration.containingFile!!,
-                classVisibility = KModifier.PUBLIC,
-            ).toBuilder()
     }
 }
 
@@ -126,14 +100,7 @@ class FixtureProcessorProvider : SymbolProcessorProvider {
     ): SymbolProcessor {
         return FixtureProcessor(
             environment.codeGenerator,
+            environment.logger,
         )
     }
 }
-
-private typealias TypeName = String
-
-private data class FixtureType(
-    val declaration: KSDeclaration,
-    var typeSpec: TypeSpec? = null,
-    var children: MutableMap<TypeName, FixtureType> = mutableMapOf(),
-)
